@@ -19,4 +19,4 @@
 
 ## Installation
 
-To be added once the Homebrew tap and shell script are complete.
+To be added once the Homebrew tap and shell script are complete
