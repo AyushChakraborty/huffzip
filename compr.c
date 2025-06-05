@@ -231,33 +231,47 @@ void print_tree(NODE *root, const char *prefix, int is_left) {
 // TODO: function to traverse through the huffman tree and make the encoding
 // array
 
-void make_encoding_array(NODE *root, int len, char *buffer, char *codes[len]) {
+void make_encoding_array(NODE *root, int len, char *buffer, int buf_len, char *codes[len], int depth) {
 
   if (root == NULL) {
     // unwrite the 0 or 1 written, since no node exists here
-    printf("just entered NULL node\n");
+    //printf("just entered NULL node\n");
     if (strlen(buffer) > 0) {
-      printf("able to enter NULL node\n");
+      //printf("able to enter NULL node\n");
       buffer[strlen(buffer) - 1] = '\0';
     }
+    depth--;
     return;
   }
 
   if (root->left == NULL && root->right == NULL) {
-    printf("able to enter the leaf\n");
+    //printf("able to enter the leaf\n");
+    printf("assigning code for %c: %s\n", root->type.c, buffer);
     strcpy(codes[(int)root->type.c], buffer);
+    printf("depth of leaf: %d\n\n", depth);
+    depth--;
     return;
   }
 
-  buffer[strlen(buffer)] = '0';
-  buffer[strlen(buffer) + 1] = '\0';
-  printf("able to get past the left nodes\n");
-  make_encoding_array(root->left, len, buffer, codes);
+  depth++;
 
-  buffer[strlen(buffer) - 1] = '1';
-  buffer[strlen(buffer)] = '\0';
-  printf("able to get to the right nodes\n");
-  make_encoding_array(root->right, len, buffer, codes);
+  buffer[strlen(buffer)] = '0';
+  buffer[strlen(buffer)+1] = '\0';
+  printf("string while going in the left halves: %s\n", buffer);
+  //printf("able to get past the left nodes\n");
+  make_encoding_array(root->left, len, buffer, buf_len, codes, depth);
+  printf("depth before transitioning: %d\n", depth);
+  buffer[depth-1] = '1';
+  buffer[depth] = '\0';
+
+  for (int i=depth+1; i<buf_len; i++) {
+        buffer[i] = '\0';     //setting the rest of the bits to be null to, to avoid issues later 
+    }
+
+  printf("string length right before transitioning: %lu\n", strlen(buffer));
+  printf("string right before transitioning: %s\n", buffer);
+  //printf("able to get to the right nodes\n");
+  make_encoding_array(root->right, len, buffer, buf_len, codes, depth);
 }
 
 void write_to_file(NODE *root, FILE *new_file, FILE *org_file) {
@@ -286,7 +300,7 @@ int main() {
 
   char *buffer = (char *)malloc(max_code_len * sizeof(char));
   printf("entring here!\n");
-  make_encoding_array(root, len, buffer, codes);
+  make_encoding_array(root, len, buffer,max_code_len, codes, 0);
 
     //printing the codes
     for (int i=0; i< len; i++) {
