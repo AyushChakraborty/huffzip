@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 // scanning through the file to get the freqs of all the chars, hashed using
 // just the ascii values, for now it only handles ascii, but will scale it later
@@ -32,6 +33,7 @@ typedef struct node {
   struct node *left;
   struct node *right;
   nodeType tag;
+
 } NODE; // node for the huffman tree
 
 void heapify(NODE **nodes, int non_null_len, int start_index) {
@@ -203,7 +205,7 @@ NODE *huff_tree(int *freqs, int len) {
                    // huffman tree
 }
 
-void print_tree(NODE *root) {
+void print_tree(NODE *root, const char *prefix, int is_left) {
   /* this function uses preorder traversal of the tree to print the huffman
    * tree in a visual format
    */
@@ -211,28 +213,94 @@ void print_tree(NODE *root) {
   if (root == NULL)
     return;
 
-  if (root->tag == IS_CHAR)
-    printf("leaf node | %c freq: %d\n", root->type.c, root->freq);
-  else if (root->tag == IS_NONLEAF)
-    printf("non leaf node | freq: %d\n", root->freq);
-  printf("\n");
+  printf("%s", prefix);
+  printf(is_left ? "├── " : "└── ");
 
-  print_tree(root->left);
-  print_tree(root->right);
+  if (root->tag == IS_CHAR)
+    printf("[%c] (freq: %d)\n", root->type.c, root->freq);
+  else if (root->tag == IS_NONLEAF)
+    printf("* (freq: %d)\n", root->freq);
+
+  char new_prefix[256];
+  snprintf(new_prefix, sizeof(new_prefix), "%s%s", prefix, is_left ? "│   " : "    ");
+
+  print_tree(root->left, new_prefix, 1);
+  print_tree(root->right, new_prefix, 0);
 }
 
 // TODO: function to traverse through the huffman tree and make the encoding
 // array
-void make_encoding_array(NODE *root, int non_null_len) {}
+
+void make_encoding_array(NODE *root, int len, char *buffer, char *codes[len]) {
+
+  if (root == NULL) {
+    // unwrite the 0 or 1 written, since no node exists here
+    printf("just entered NULL node\n");
+    if (strlen(buffer) > 0) {
+      printf("able to enter NULL node\n");
+      buffer[strlen(buffer) - 1] = '\0';
+    }
+    return;
+  }
+
+  if (root->left == NULL && root->right == NULL) {
+    printf("able to enter the leaf\n");
+    strcpy(codes[(int)root->type.c], buffer);
+    return;
+  }
+
+  buffer[strlen(buffer)] = '0';
+  buffer[strlen(buffer) + 1] = '\0';
+  printf("able to get past the left nodes\n");
+  make_encoding_array(root->left, len, buffer, codes);
+
+  buffer[strlen(buffer) - 1] = '1';
+  buffer[strlen(buffer)] = '\0';
+  printf("able to get to the right nodes\n");
+  make_encoding_array(root->right, len, buffer, codes);
+}
+
+void write_to_file(NODE *root, FILE *new_file, FILE *org_file) {
+  // take the codes array, and replace the chars by these bit codes
+  // new_file must be write mode, org_file in read mode
+}
+
 int main() {
-  FILE *file = fopen("texts/s1.txt", "r");
+  FILE *file = fopen("texts/s3.txt", "r");
   int *freqs = char_freqs(file);
   for (int i = 0; i < 256; i++) {
     printf("%d\n", freqs[i]);
   }
 
   NODE *root = huff_tree(freqs, 256);
-  print_tree(root);
+  print_tree(root, "", 0);
+
+  int len = 256;
+  // stores the huffman codes for each of the possible ascii chars
+  char *codes[len];
+  int max_code_len = 256;
+
+  for (int i = 0; i < len; i++) {
+    codes[i] = (char *)malloc(max_code_len);
+  }
+
+  char *buffer = (char *)malloc(max_code_len * sizeof(char));
+  printf("entring here!\n");
+  make_encoding_array(root, len, buffer, codes);
+
+    //printing the codes
+    for (int i=0; i< len; i++) {
+        if (freqs[i] != 0) {
+            printf("%c: %s\n", i, codes[i]);
+        }
+    }
+
+  // cleanup
+  for (int i = 0; i < len; i++) {
+    free(codes[i]);
+  }
+  free(buffer);
+
   fclose(file);
   return 0;
 }
