@@ -1,7 +1,7 @@
 #!/bin/sh
 
 echo "compiling decompr.c..."
-gcc decompr.c huffman.c -o decompr
+gcc src/decompr.c src/huffman.c -o decompr
 
 if [ $? -eq 0 ]; then
     echo "build successful: ./decompr"

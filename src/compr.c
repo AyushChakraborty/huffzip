@@ -21,95 +21,6 @@ int *char_freqs(FILE *file) {
   return freqs;
 }
 
-void print_tree(NODE *root, const char *prefix, int is_left) {
-  /* this function uses preorder traversal of the tree to print the huffman
-   * tree in a visual format
-   *
-   *params:
-        root: root of the huffman tree
-        prefix: the pattern to print, based on weather its the left or right
-   branch is_left: flag to check for the left branch
-   */
-
-  if (root == NULL)
-    return;
-
-  printf("%s", prefix);
-  printf(is_left ? "├── " : "└── ");
-
-  if (root->tag == IS_CHAR)
-    printf("[%c] (freq: %d)\n", root->type.c, root->freq);
-  else if (root->tag == IS_NONLEAF)
-    printf("* (freq: %d)\n", root->freq);
-
-  char new_prefix[256];
-  snprintf(new_prefix, sizeof(new_prefix), "%s%s", prefix,
-           is_left ? "│   " : "    ");
-
-  print_tree(root->left, new_prefix, 1);
-  print_tree(root->right, new_prefix, 0);
-}
-
-void make_encoding_array(NODE *root, int len, char *buffer, int buf_len,
-                         char *codes[len], int depth) {
-  /* this function makes the encoding array from the huffman tree, by following
-   in inorder traversal method
-   * the algorithm is that any left branch taken will append 0 to the huffman
-   code for a character, and a right
-   * branch taken will append 1. This is tracked by the buffer, which is shared
-   across the call stack frames
-   *
-   *params:
-      root: the root of the huffman tree
-      len: length of the codes array(which is 256 as standard)
-      buffer: holds the huffman code for a leaf, as we go down the tree
-      buf_len: length of the buffer
-      codes: holds the codes for each of the ascii chars
-      depth: current depth of the tree node is contained here
-   * */
-
-  if (root == NULL) {
-    // unwrite the 0 or 1 written, since no node exists here
-    // printf("just entered NULL node\n");
-    if (strlen(buffer) > 0) {
-      // printf("able to enter NULL node\n");
-      buffer[strlen(buffer) - 1] = '\0';
-    }
-    depth--;
-    return;
-  }
-
-  if (root->left == NULL && root->right == NULL) {
-    // printf("able to enter the leaf\n");
-    // printf("assigning code for %c: %s\n", root->type.c, buffer);
-    strcpy(codes[(int)root->type.c], buffer);
-    // printf("depth of leaf: %d\n\n", depth);
-    depth--;
-    return;
-  }
-
-  depth++;
-
-  buffer[strlen(buffer)] = '0';
-  buffer[strlen(buffer) + 1] = '\0';
-  //  printf("string while going in the left halves: %s\n", buffer);
-  // printf("able to get past the left nodes\n");
-  make_encoding_array(root->left, len, buffer, buf_len, codes, depth);
-  //  printf("depth before transitioning: %d\n", depth);
-  buffer[depth - 1] = '1';
-  buffer[depth] = '\0';
-
-  for (int i = depth + 1; i < buf_len; i++) {
-    buffer[i] = '\0'; // setting the rest of the bits to be null to, to avoid
-                      // issues later
-  }
-
-  // printf("string length right before transitioning: %lu\n", strlen(buffer));
-  // printf("string right before transitioning: %s\n", buffer);
-  // printf("able to get to the right nodes\n");
-  make_encoding_array(root->right, len, buffer, buf_len, codes, depth);
-}
-
 void write_to_file(NODE *root, FILE *new_file, FILE *org_file, int len,
                    char *codes[len], int *freq_table) {
   /*take the codes array, and replace the chars by these bit codes
@@ -208,7 +119,7 @@ int main() {
     }
   }
 
-  FILE *new_file = fopen("texts/output.txt", "a");
+  FILE *new_file = fopen("texts/output.txt", "w");
   if (new_file == NULL) {
     printf("could not open the file\n");
     return 1;

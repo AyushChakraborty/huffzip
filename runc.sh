@@ -1,7 +1,7 @@
 #!/bin/sh
 
 echo "compiling compr.c..."
-gcc compr.c huffman.c -o compr
+gcc src/compr.c src/huffman.c -o compr
 
 if [ $? -eq 0 ]; then
     echo "build successful: ./compr"
