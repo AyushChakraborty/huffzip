@@ -13,7 +13,6 @@ int *char_freqs(FILE *file) {
   int c;
 
   while ((c = fgetc(file_temp)) != EOF) {
-    // printf("%d\n", c);
     freqs[c] += 1;
   }
   // the file is represented by lots of bits, but here, only the ascii value is
@@ -31,6 +30,7 @@ void write_to_file(NODE *root, FILE *new_file, FILE *org_file, int len,
         new_file: write only pointer to a file
         org_file: read only pointer to a file, the original content resides here
   * */
+  int num_bits = 0;
   int c;
   int bit_pos = 0;
   unsigned char bit_buffer = 0;
@@ -38,6 +38,12 @@ void write_to_file(NODE *root, FILE *new_file, FILE *org_file, int len,
   // for the headers, write the freq table as is, so that the huffman tree can
   // be reconstructed in the decoder side offloading the load from the encoder
   // side
+
+  // first writing the placeholder for the num of bits written
+  int placeholder = 0;
+  // writes 4 bytes, shld be sufficient to handle very large texts too
+  // since it can store sizes upto 2^32 bits
+  fwrite(&placeholder, sizeof(int), 1, new_file);
 
   for (int i = 0; i < len; i++) {
     if (freq_table[i] != 0) {
@@ -57,6 +63,7 @@ void write_to_file(NODE *root, FILE *new_file, FILE *org_file, int len,
         // if bit_buffer is full
         printf("written this part\n");
         fputc(bit_buffer, new_file);
+        num_bits += 8; // keeping track of the bits added
         // emptying buffer
         bit_buffer = 0;
         bit_pos = 0; // reset
@@ -73,15 +80,18 @@ void write_to_file(NODE *root, FILE *new_file, FILE *org_file, int len,
   // have to also write bit_pos to track the garbage bits
   if (bit_pos > 0) {
     fputc(bit_buffer, new_file);
-    // constants always to be written, always taking 2 more bytes
-    fputc('\n', new_file);
-    fputc(bit_pos, new_file);
-  } else {
-    // again constants, always taking 2 more bytes
-    fputc('\n', new_file);
-    fputc(0, new_file); // the bit_pos now is 0 byte, since all buffers are
-                        // perfectly filled
+    num_bits += bit_pos; // make sure the remainig bits get accounted for too
   }
+
+  printf("num of bits written: %d\n", num_bits);
+
+  // seek to the top of the file, and write the num of bits occupied
+  fseek(new_file, 0, SEEK_SET);
+  fwrite(&num_bits, sizeof(int), 1, new_file);
+
+  // no need to deal with footers now, which might have resulted in storing the
+  // actual contents of the encoded file in another buffer for no reason in the
+  // decoder side
 }
 
 int main() {

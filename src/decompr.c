@@ -3,6 +3,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+void traverse_huffman_tree(NODE *root, FILE *enc_file, FILE *dec_file) {
+  /*
+   * file here points to the start of the actual encoded text
+   * */
+}
+
 int main() {
 
   // read the encoded file to get the freqs, make the huffman tree from it
@@ -11,12 +17,19 @@ int main() {
       fopen("texts/new.txt",
             "w"); // file to which the decoded contents will be written
 
-  // reconstruct the huffman tree
+  // reconstruct the huffman tree and the num of actual bits
   // so first get the freq table from the text file
   int *freqs = (int *)calloc(256, sizeof(char));
   char line[32];
   int num = 1;
+  int counter = 0;
+  int num_bits = 0;
+
+  fread(&num_bits, sizeof(int), 1, enc_file);
+  fgetc(enc_file); // read the newline
+
   while (fgets(line, sizeof(line), enc_file)) {
+
     if (strcmp(line, "\n") == 0) {
       if (num != 2) {
         num++;
@@ -32,24 +45,12 @@ int main() {
     }
   }
   NODE *root = huff_tree(freqs, 256);
-  int len = 256;
-  // stores the huffman codes for each of the possible ascii chars
-  char *codes[len];
-  int max_code_len = 256;
+  // all cool now
+  // printf("num of bits actually present: %d\n", num_bits);
 
-  for (int i = 0; i < len; i++) {
-    codes[i] = (char *)malloc(max_code_len);
-  }
-
-  char *buffer = (char *)malloc(max_code_len * sizeof(char));
-  make_encoding_array(root, len, buffer, max_code_len, codes, 0);
-
-  // printing the codes
-  for (int i = 0; i < len; i++) {
-    if (freqs[i] != 0) {
-      printf("%c: %s\n", i, codes[i]);
-    }
-  }
+  // now the fp is at the location where the actual content is, so can write the
+  // decoded contents to dec_file
+  traverse_huffman_tree(root, enc_file, dec_file);
 
   return 0;
 }
