@@ -3,10 +3,40 @@
 #include <stdlib.h>
 #include <string.h>
 
-void traverse_huffman_tree(NODE *root, FILE *enc_file, FILE *dec_file) {
+void traverse_huffman_tree(NODE *root, FILE *enc_file, FILE *dec_file,
+                           int num_bits) {
   /*
    * file here points to the start of the actual encoded text
    * */
+  char byte;
+  int bit;
+  NODE *temp = root;
+  while (num_bits > 0) {
+    int bits_to_be_read = 8;
+    if (num_bits < 8 && num_bits != 0) {
+      bits_to_be_read = num_bits;
+    }
+    byte = fgetc(enc_file);
+
+    // read bits
+    for (int i = 0; i < bits_to_be_read; i++) {
+      bit = (byte >> (7 - i)) & 1;
+
+      // traverse the tree accordingly
+      if (bit == 0) {
+        temp = temp->left;
+      } else if (bit == 1) {
+        temp = temp->right;
+      }
+
+      if (temp->tag == IS_CHAR) {
+        printf("%c", temp->type.c);
+        temp = root; // reset pointer back to root of tree
+      }
+    }
+
+    num_bits -= 8;
+  }
 }
 
 int main() {
@@ -50,7 +80,7 @@ int main() {
 
   // now the fp is at the location where the actual content is, so can write the
   // decoded contents to dec_file
-  traverse_huffman_tree(root, enc_file, dec_file);
+  traverse_huffman_tree(root, enc_file, dec_file, num_bits);
 
   return 0;
 }
