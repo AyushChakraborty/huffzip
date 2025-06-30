@@ -14,7 +14,8 @@ int *char_freqs(FILE *file) {
   int c;
 
   while ((c = fgetc(file_temp)) != EOF) {
-    freqs[c] += 1;
+    if (c >= 0 && c < 256)
+      freqs[c] += 1;
   }
   // the file is represented by lots of bits, but here, only the ascii value is
   // read, which goes from 0 to 255
@@ -55,6 +56,8 @@ void write_to_file(NODE *root, FILE *new_file, FILE *org_file, int len,
   fputc('\n', new_file); // so body starts after \n\n
 
   while ((c = fgetc(org_file)) != EOF) {
+    if (c < 0 || c >= len)
+      continue;
     char *code_str = codes[c];
 
     // change code_str to pure byte representation

@@ -233,7 +233,11 @@ void make_encoding_array(NODE *root, int len, char *buffer, int buf_len,
   if (root->left == NULL && root->right == NULL) {
     // printf("able to enter the leaf\n");
     // printf("assigning code for %c: %s\n", root->type.c, buffer);
-    strcpy(codes[(int)root->type.c], buffer);
+    if ((unsigned char)root->type.c < len)
+      strcpy(codes[(int)root->type.c], buffer);
+    else {
+      printf("Non-ASCII characters detected\n");
+    }
     // printf("depth of leaf: %d\n\n", depth);
     depth--;
     return;
