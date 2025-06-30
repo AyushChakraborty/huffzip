@@ -31,6 +31,7 @@ void traverse_huffman_tree(NODE *root, FILE *enc_file, FILE *dec_file,
 
       if (temp->tag == IS_CHAR) {
         printf("%c", temp->type.c);
+        fputc(temp->type.c, dec_file);
         temp = root; // reset pointer back to root of tree
       }
     }
@@ -49,16 +50,24 @@ int main() {
 
   // reconstruct the huffman tree and the num of actual bits
   // so first get the freq table from the text file
-  int *freqs = (int *)calloc(256, sizeof(char));
+  int *freqs = (int *)calloc(256, sizeof(int));
   char line[32];
   int num = 1;
-  int counter = 0;
   int num_bits = 0;
 
+  // read the num of bits actually written
   fread(&num_bits, sizeof(int), 1, enc_file);
   fgetc(enc_file); // read the newline
 
+  char ch;
+  int freq;
+
   while (fgets(line, sizeof(line), enc_file)) {
+    size_t len = strlen(line);
+    // printf("line:%s len:%lu\n", line, len);
+    //  if (line[0] == ' ') {
+    //   printf("intended newline found");
+    //  }
 
     if (strcmp(line, "\n") == 0) {
       if (num != 2) {
@@ -66,20 +75,32 @@ int main() {
       } else {
         break;
       }
-    } else {
-      if (line[1] != ' ') {
-        freqs[(int)'\n'] = line[1] - '0';
-      } else {
-        freqs[(int)line[0]] = line[2] - '0';
+      // peep at the next line to see if a freq exists, if yes its the case of
+      // \n
+      if (fgets(line, sizeof(line), enc_file)) {
+        if (sscanf(line, "%d", &freq) == 1) {
+          freqs[(int)'\n'] = freq;
+        }
       }
+      continue;
+    }
+    if (sscanf(line, "%c %d", &ch, &freq) == 2) {
+      freqs[(int)ch] = freq;
     }
   }
+
+  // for (int i = 0; i < 256; i++) {
+  //  if (freqs[i] != 0) {
+  //   printf("%c %d\n", i, freqs[i]);
+  //}
+  // }
+
   NODE *root = huff_tree(freqs, 256);
   // all cool now
-  // printf("num of bits actually present: %d\n", num_bits);
+  // now the fp is at the location where the actual content is, so can write
+  // the decoded contents to dec_file
 
-  // now the fp is at the location where the actual content is, so can write the
-  // decoded contents to dec_file
+  // print_tree(root, "", 0);
   traverse_huffman_tree(root, enc_file, dec_file, num_bits);
 
   return 0;

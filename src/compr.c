@@ -44,6 +44,7 @@ void write_to_file(NODE *root, FILE *new_file, FILE *org_file, int len,
   // writes 4 bytes, shld be sufficient to handle very large texts too
   // since it can store sizes upto 2^32 bits
   fwrite(&placeholder, sizeof(int), 1, new_file);
+  fputc('\n', new_file);
 
   for (int i = 0; i < len; i++) {
     if (freq_table[i] != 0) {
@@ -61,7 +62,6 @@ void write_to_file(NODE *root, FILE *new_file, FILE *org_file, int len,
     for (int i = 0; i < strlen(code_str); i++) {
       if (bit_pos == 8) {
         // if bit_buffer is full
-        printf("written this part\n");
         fputc(bit_buffer, new_file);
         num_bits += 8; // keeping track of the bits added
         // emptying buffer
@@ -83,8 +83,6 @@ void write_to_file(NODE *root, FILE *new_file, FILE *org_file, int len,
     num_bits += bit_pos; // make sure the remainig bits get accounted for too
   }
 
-  printf("num of bits written: %d\n", num_bits);
-
   // seek to the top of the file, and write the num of bits occupied
   fseek(new_file, 0, SEEK_SET);
   fwrite(&num_bits, sizeof(int), 1, new_file);
@@ -95,7 +93,7 @@ void write_to_file(NODE *root, FILE *new_file, FILE *org_file, int len,
 }
 
 int main() {
-  FILE *file = fopen("texts/s3.txt", "r");
+  FILE *file = fopen("texts/s1.txt", "r");
 
   if (file == NULL) {
     printf("could not open the file\n");
