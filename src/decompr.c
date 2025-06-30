@@ -1,3 +1,4 @@
+#include "huff.h"
 #include "huffman.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,23 +31,21 @@ void traverse_huffman_tree(NODE *root, FILE *enc_file, FILE *dec_file,
       }
 
       if (temp->tag == IS_CHAR) {
-        printf("%c", temp->type.c);
         fputc(temp->type.c, dec_file);
         temp = root; // reset pointer back to root of tree
       }
     }
-
     num_bits -= 8;
   }
 }
 
-int main() {
+void decompress(FILE *enc_file, FILE *dec_file) {
 
   // read the encoded file to get the freqs, make the huffman tree from it
-  FILE *enc_file = fopen("texts/output.txt", "r");
-  FILE *dec_file =
-      fopen("texts/new.txt",
-            "w"); // file to which the decoded contents will be written
+  if (enc_file == NULL) {
+    printf("could not open the file\n");
+    return;
+  }
 
   // reconstruct the huffman tree and the num of actual bits
   // so first get the freq table from the text file
@@ -64,10 +63,6 @@ int main() {
 
   while (fgets(line, sizeof(line), enc_file)) {
     size_t len = strlen(line);
-    // printf("line:%s len:%lu\n", line, len);
-    //  if (line[0] == ' ') {
-    //   printf("intended newline found");
-    //  }
 
     if (strcmp(line, "\n") == 0) {
       if (num != 2) {
@@ -96,12 +91,13 @@ int main() {
   // }
 
   NODE *root = huff_tree(freqs, 256);
-  // all cool now
   // now the fp is at the location where the actual content is, so can write
   // the decoded contents to dec_file
 
-  // print_tree(root, "", 0);
-  traverse_huffman_tree(root, enc_file, dec_file, num_bits);
+  if (dec_file == NULL) {
+    printf("could not open the file\n");
+    return;
+  }
 
-  return 0;
+  traverse_huffman_tree(root, enc_file, dec_file, num_bits);
 }

@@ -1,3 +1,4 @@
+#include "huff.h"
 #include "huffman.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -92,21 +93,18 @@ void write_to_file(NODE *root, FILE *new_file, FILE *org_file, int len,
   // decoder side
 }
 
-int main() {
-  FILE *file = fopen("texts/s1.txt", "r");
-
-  if (file == NULL) {
+void compress(FILE *in_file, FILE *out_file) {
+  if (in_file == NULL) {
     printf("could not open the file\n");
-    return 1;
+    return;
   }
 
-  int *freqs = char_freqs(file);
+  int *freqs = char_freqs(in_file);
 
   // rewinding the file pointer, so that it can be used by write_to_file() again
-  rewind(file);
+  rewind(in_file);
 
   NODE *root = huff_tree(freqs, 256);
-  print_tree(root, "", 0);
 
   int len = 256;
   // stores the huffman codes for each of the possible ascii chars
@@ -121,19 +119,18 @@ int main() {
   make_encoding_array(root, len, buffer, max_code_len, codes, 0);
 
   // printing the codes
-  for (int i = 0; i < len; i++) {
-    if (freqs[i] != 0) {
-      printf("%c: %s\n", i, codes[i]);
-    }
-  }
+  // for (int i = 0; i < len; i++) {
+  // if (freqs[i] != 0) {
+  //   printf("%c: %s\n", i, codes[i]);
+  // }
+  // }
 
-  FILE *new_file = fopen("texts/output.txt", "w");
-  if (new_file == NULL) {
+  if (out_file == NULL) {
     printf("could not open the file\n");
-    return 1;
+    return;
   }
 
-  write_to_file(root, new_file, file, len, codes, freqs);
+  write_to_file(root, out_file, in_file, len, codes, freqs);
 
   // cleanup
   for (int i = 0; i < len; i++) {
@@ -141,8 +138,6 @@ int main() {
   }
   free(buffer);
 
-  fclose(file);
-  fclose(new_file);
-
-  return 0;
+  fclose(in_file);
+  fclose(out_file);
 }
